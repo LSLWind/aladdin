@@ -1,0 +1,9 @@
+2
+A B
+2
+a b
+3
+A 3 a B a
+B 1 ε
+B 2 B b
+A
