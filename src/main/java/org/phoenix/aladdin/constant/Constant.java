@@ -11,6 +11,9 @@ public class Constant {
 
     public static final String DELETE_SUCCESS_MESSAGE="删除成功";
 
+    public static final int WE_CHAT_LOGIN_STATUS_ERROR=512;
+    public static final String WE_CHAT_LOGIN_STATUS_MESSAGE="微信登录异常";
+
     public static final int USERNAME_OR_PASSWORD_ERROR_CODE=412;//用户名或密码错误
     public static final String USERNAME_OR_PASSWORD_ERROR="用户名或密码错误";
 }

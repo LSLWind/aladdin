@@ -28,9 +28,6 @@ public class User {
     @Column(nullable = false)
     private long phoneNumber;
 
-    @Column(nullable = false)
-    private int regionId;
-
     @Column(length = 50)
     private String address;
 

@@ -33,7 +33,7 @@ public class UserManageService {
     public boolean deleteUserById(long userId){
         try {
             userDao.deleteById(userId);
-        }catch (EmptyResultDataAccessException emptyResultDataAccessException){
+        }catch (Exception e){//TODO 抛出任何异常都将返回删除失败
             return false;
         }
         return true;

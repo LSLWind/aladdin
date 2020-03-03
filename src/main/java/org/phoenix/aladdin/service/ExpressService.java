@@ -1,11 +1,14 @@
 package org.phoenix.aladdin.service;
 
 import org.phoenix.aladdin.constant.ExpressInfo;
+import org.phoenix.aladdin.dao.EmployeeDao;
 import org.phoenix.aladdin.dao.ExpressDao;
 import org.phoenix.aladdin.dao.PackageContentDao;
+import org.phoenix.aladdin.model.entity.Employee;
 import org.phoenix.aladdin.model.entity.Express;
 import org.phoenix.aladdin.model.entity.PackageContent;
 import org.phoenix.aladdin.model.entity.PackageHistory;
+import org.phoenix.aladdin.model.view.ExpressLocationVO;
 import org.phoenix.aladdin.util.DateUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -21,6 +24,12 @@ import java.util.zip.DataFormatException;
  */
 @Component
 public class ExpressService {
+
+    private EmployeeDao employeeDao;
+    @Autowired
+    public void setEmployeeDao(EmployeeDao employeeDao) {
+        this.employeeDao = employeeDao;
+    }
 
     private ExpressDao expressDao;
     @Autowired
@@ -39,29 +48,30 @@ public class ExpressService {
      * @param id 快件id
      * @return 快件的历史位置信息记录
      */
-    public List<String> getExpressLocationById(long id){
-        List<String> res=new ArrayList<>();
+    public List<ExpressLocationVO> getExpressLocationById(long id){
+        List<ExpressLocationVO> res=new ArrayList<>();
         Express express=expressDao.findById(id);
 
         //检查快件是否存在
         if(express==null){
-            res.add(ExpressInfo.EXPRESS_NOT_FOUND);
+            res.add(new ExpressLocationVO("","",ExpressInfo.EXPRESS_NOT_FOUND,""));
             return res;
         }
 
         //检查快件状态
         if(express.getStatus().equals(ExpressInfo.EXPRESS_NOT_START)){
-            res.add(ExpressInfo.EXPRESS_NOT_START);
+            res.add(new ExpressLocationVO(express.getBeginTime(),"",ExpressInfo.EXPRESS_NOT_START,""));
             return res;
         }
 
         //查找快件运输历史
         if(express.getPackageHistoryList()==null){
-            res.add(ExpressInfo.EXPRESS_NOT_START);
+            res.add(new ExpressLocationVO(express.getBeginTime(),"",ExpressInfo.EXPRESS_NOT_START,""));
         }else {
             List<PackageHistory> packageHistoryList=express.getPackageHistoryList();
             for(PackageHistory p:packageHistoryList){
-                res.add(p.getTime()+"到达"+p.getTransportNodeId());
+                String liablePersonName=employeeDao.findById(express.getId());
+                res.add(new ExpressLocationVO(p.getTime(),p.getTransportNodeId(),p.getStatus(),liablePersonName));
             }
         }
 

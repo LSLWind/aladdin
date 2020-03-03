@@ -31,7 +31,6 @@ class UserDaoTest {
         user.setName("lsl");
         user.setPassword("123456");
         user.setPhoneNumber(13849720276L);
-        user.setRegionId(1);
         userDao.save(user);
         System.out.println(userDao.findAll().get(0).toString());
     }

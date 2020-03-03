@@ -1,5 +1,6 @@
 package org.phoenix.aladdin.controller;
 
+import com.alibaba.fastjson.JSONObject;
 import org.phoenix.aladdin.constant.Constant;
 import org.phoenix.aladdin.constant.Result;
 import org.phoenix.aladdin.model.entity.User;
@@ -44,11 +45,12 @@ public class UserController {
      * @param errors
      * @return
      */
+    //TODO 捕获GET抛出的405异常
     @RequestMapping(value = "/login",method = RequestMethod.POST)
     @ResponseBody
-    public Result login(@RequestBody @Valid LoginForm loginForm, Errors errors){
+    public Result<Object> login(@RequestBody @Valid LoginForm loginForm, Errors errors){
         if(errors.hasErrors()){
-            return Result.NAME_OR_PASSWORD_ERROR;
+            return Result.USERNAME_OR_PASSWORD_ERROR;
         }
         //对传来的密码进行MD5加密
         String pwd;
@@ -56,7 +58,7 @@ public class UserController {
             pwd=MD5Util.getMD5Str(loginForm.getPwd());
         }catch (Exception e){
             e.printStackTrace();
-            return Result.NAME_OR_PASSWORD_ERROR;
+            return Result.USERNAME_OR_PASSWORD_ERROR;
         }
 
         //登录校验
@@ -76,7 +78,7 @@ public class UserController {
             }
         }
 
-        return response==null?Result.NAME_OR_PASSWORD_ERROR:new Result<Response>(Constant.OK,response);
+        return response==null?Result.USERNAME_OR_PASSWORD_ERROR:new Result<>(Constant.OK,response);
     }
 
     /**
@@ -86,7 +88,7 @@ public class UserController {
      */
     @RequestMapping(value = "/deleteUser/{userId}",method = RequestMethod.DELETE)
     @ResponseBody
-    public Result<String> deleteUserById(@PathVariable("userId") long userId){
+    public Result<Object> deleteUserById(@PathVariable("userId") long userId){
         boolean success=userManageService.deleteUserById(userId);
         if(success)return Result.DELETE_SUCCESS;
         return Result.DELETE_FAIL_ERROR;
@@ -100,12 +102,14 @@ public class UserController {
      */
     @RequestMapping(value = "/listUser",method = RequestMethod.GET)
     @ResponseBody
-    public Result<List<User>> getUserListByPageAndSize(@PathParam("page")int page,
+    public Result<Object> getUserListByPageAndSize(@PathParam("page")int page,
                                                        @PathParam("size")int size){
         if(page<=0||size<=0)return new Result<>(1,null);
 
         //页面从0开始，但是传过来的从1开始
-        return new Result<>(1,userManageService.getAllUserByPageAndSize(page-1,size));
+        JSONObject data=new JSONObject();
+        data.put("userList",userManageService.getAllUserByPageAndSize(page-1,size));
+        return new Result<>(1,data);
     }
 
 }

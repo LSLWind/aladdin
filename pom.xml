@@ -42,6 +42,12 @@
             <artifactId>fastjson</artifactId>
             <version>1.2.46</version>
         </dependency>
+        <!--HttpClient网络编程-->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.11</version>
+        </dependency>
 
 
         <dependency>
@@ -116,6 +122,10 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <!--配置打包项目-->
+                <configuration>
+                    <mainClass>org.phoenix.aladdin.AladdinApplication</mainClass>
+                </configuration>
             </plugin>
         </plugins>
     </build>

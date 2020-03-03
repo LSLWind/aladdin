@@ -1,6 +1,9 @@
 package org.phoenix.aladdin.controller;
 
+import com.alibaba.fastjson.JSONObject;
+import org.phoenix.aladdin.constant.Constant;
 import org.phoenix.aladdin.constant.Result;
+import org.phoenix.aladdin.model.view.ExpressLocationVO;
 import org.phoenix.aladdin.service.ExpressService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -23,10 +26,13 @@ public class ExpressController {
 
     @RequestMapping("/getExpressLocation/{express_id}")
     @ResponseBody
-    public Result<List<String>> getExpressLocationByExpressId(@PathVariable("express_id")long expressId){
-        Result<List<String>> result=new Result<>();
-        result.setCode(1);
-        result.setData(expressService.getExpressLocationById(expressId));
+    public Result<Object> getExpressLocationByExpressId(@PathVariable("express_id")long expressId){
+        Result<Object> result=new Result<>();
+        result.setCode(Constant.OK);
+        //使用JSONObject填充字段
+        JSONObject object = new JSONObject();
+        object.put("expressLocationVO",expressService.getExpressLocationById(expressId));
+        result.setData(object);
         return result;
     }
 }
