@@ -33,4 +33,10 @@ public class User {
 
     private Byte status;
 
+    public User(String name,long phoneNumber){
+        this.name=name;
+        this.phoneNumber=phoneNumber;
+    }
+
+
 }

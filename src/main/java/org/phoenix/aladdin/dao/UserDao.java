@@ -18,4 +18,8 @@ public interface UserDao extends JpaRepository<User,Long> {
 
     @Modifying
     void deleteById(long userId);
+
+    boolean existsByPhoneNumber(long phoneNumber);
+
+    User findByPhoneNumber(long phoneNumber);
 }

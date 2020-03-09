@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.phoenix.aladdin.model.view.BookingExpressVO;
 
 import javax.persistence.*;
 import java.util.List;
@@ -69,4 +70,9 @@ public class Express {
     private Float cost;
 
     private String status;
+
+    private String remark;
+
+    private String moreInfo;
+
 }

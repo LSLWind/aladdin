@@ -13,6 +13,7 @@ import org.phoenix.aladdin.util.DateUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.transaction.Transactional;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -76,5 +77,15 @@ public class ExpressService {
         }
 
         return res;
+    }
+
+    /**
+     * 插入一条快递数据
+     * @param express
+     * @return
+     */
+    @Transactional
+    public Express insertOneExpress(Express express){
+        return expressDao.save(express);
     }
 }

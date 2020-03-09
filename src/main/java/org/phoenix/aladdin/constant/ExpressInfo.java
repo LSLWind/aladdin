@@ -1,6 +1,7 @@
 package org.phoenix.aladdin.constant;
 
 public class ExpressInfo {
+    public static final String EXPRESS_MAILING="预约";
     public static final String EXPRESS_NOT_START="等待出库";
     public static final String EXPRESS_SUCCESS_ARRIVE="正在派送";
     public static final String EXPRESS_IN_TRANSPORT="正在运输";
