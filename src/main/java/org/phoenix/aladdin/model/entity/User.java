@@ -6,9 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.lang.NonNull;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 @Data
 @NoArgsConstructor
@@ -17,6 +15,7 @@ import javax.persistence.Id;
 public class User {
 
     @Id
+    @GeneratedValue(strategy= GenerationType.IDENTITY)
     private long id;
 
     @Column(length = 15,nullable = false)
@@ -26,16 +25,21 @@ public class User {
     private String password;//存储的密码是MD5值
 
     @Column(nullable = false)
-    private long phoneNumber;
+    private String phoneNumber;
 
     @Column(length = 50)
-    private String address;
+    private String address="";
 
-    private Byte status;
+    @Column
+    private Byte status=0;
 
-    public User(String name,long phoneNumber){
+    @Column
+    private String wxOpenid="";
+
+    public User(String name,String phoneNumber,String password){
         this.name=name;
         this.phoneNumber=phoneNumber;
+        this.password=password;
     }
 
 

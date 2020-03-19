@@ -32,7 +32,7 @@ public class LoginService {
      * @param password
      * @return 成功登录响应，验证失败返回null
      */
-    public Response checkUserByPhoneNumber(long phoneNumber,String password){
+    public Response checkUserByPhoneNumber(String phoneNumber,String password){
         User user=userDao.findByPhoneNumberAndPassword(phoneNumber,password);
         return user==null?null:Response.getSuccessUserLoginResponse();
     }
@@ -54,7 +54,7 @@ public class LoginService {
      * @param password
      * @return 成功登录响应，验证失败返回null
      */
-    public Response checkEmployeeByPhoneNumber(long phoneNumber,String password){
+    public Response checkEmployeeByPhoneNumber(String phoneNumber,String password){
         Employee employee=employeeDao.findByPhoneNumberAndPassword(phoneNumber,password);
         return employee==null?null:Response.getSuccessEmployeeLoginResponse();
     }

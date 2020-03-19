@@ -1,9 +1,7 @@
 package org.phoenix.aladdin.controller;
 
 import com.alibaba.fastjson.JSONObject;
-import org.phoenix.aladdin.constant.Constant;
-import org.phoenix.aladdin.constant.Result;
-import org.phoenix.aladdin.model.view.ExpressLocationVO;
+import org.phoenix.aladdin.response.CommonReturnType;
 import org.phoenix.aladdin.service.ExpressService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -11,11 +9,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.List;
-
 @Controller
 @RequestMapping("/web/express")
-public class ExpressController {
+public class ExpressController extends BaseController{
 
     private ExpressService expressService;
     @Autowired
@@ -24,15 +20,15 @@ public class ExpressController {
     }
 
 
+    /**
+     * 根据快件id获取快件历史信息位置
+     */
     @RequestMapping("/getExpressLocation/{express_id}")
     @ResponseBody
-    public Result<Object> getExpressLocationByExpressId(@PathVariable("express_id")long expressId){
-        Result<Object> result=new Result<>();
-        result.setCode(Constant.OK);
+    public CommonReturnType getExpressLocationByExpressId(@PathVariable("express_id")long expressId){
         //使用JSONObject填充字段
-        JSONObject object = new JSONObject();
-        object.put("expressLocationVO",expressService.getExpressLocationById(expressId));
-        result.setData(object);
-        return result;
+        JSONObject res = new JSONObject();
+        res.put("expressLocationVO",expressService.getExpressLocationById(expressId));
+        return CommonReturnType.create(res);
     }
 }

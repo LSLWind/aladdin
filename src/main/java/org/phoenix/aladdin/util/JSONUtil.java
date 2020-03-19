@@ -17,5 +17,11 @@ public class JSONUtil {
         return object;
     }
 
+    public static Object oneErrorData(String errorMsg){
+        JSONObject object=new JSONObject();
+        object.put("error",errorMsg);
+        return object;
+    }
+
 
 }

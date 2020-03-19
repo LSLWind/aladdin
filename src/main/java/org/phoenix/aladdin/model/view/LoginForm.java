@@ -12,7 +12,7 @@ import javax.validation.constraints.Size;
 @NoArgsConstructor
 public class LoginForm {
 
-    private long phoneNumber;
+    private String phoneNumber;
 
     @Size(min = 1,max = 15)
     private String userName;

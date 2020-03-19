@@ -4,18 +4,22 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.LayeredConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
-import org.phoenix.aladdin.constant.AppConstant;
-import org.phoenix.aladdin.constant.Constant;
-import org.phoenix.aladdin.constant.ExpressInfo;
-import org.phoenix.aladdin.constant.Result;
-import org.phoenix.aladdin.model.entity.City;
-import org.phoenix.aladdin.model.entity.Express;
-import org.phoenix.aladdin.model.entity.Province;
+import org.phoenix.aladdin.app.client.viewobject.LoginCodeVO;
+import org.phoenix.aladdin.app.constant.AppConstant;
+import org.phoenix.aladdin.error.BusinessException;
+import org.phoenix.aladdin.error.EmBusinessError;
 import org.phoenix.aladdin.model.entity.User;
-import org.phoenix.aladdin.model.view.BookingExpressVO;
+import org.phoenix.aladdin.response.CommonReturnType;
 import org.phoenix.aladdin.service.ExpressService;
 import org.phoenix.aladdin.service.GeographyService;
 import org.phoenix.aladdin.service.UserService;
@@ -24,11 +28,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.net.ssl.SSLContext;
 import javax.servlet.http.HttpSession;
-import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 
 @Controller
 public class WeChatController {
@@ -54,18 +59,38 @@ public class WeChatController {
         this.expressService = expressService;
     }
 
+
+    /** 全局连接池对象，静态代码块配置连接池信息*/
+    private static final PoolingHttpClientConnectionManager connManager;
+    static {
+        LayeredConnectionSocketFactory sslsf = null;
+        try {
+            sslsf = new SSLConnectionSocketFactory(SSLContext.getDefault());
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+
+        Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory> create()
+                .register("https", sslsf)
+                .register("http", new PlainConnectionSocketFactory())
+                .build();
+        connManager =new PoolingHttpClientConnectionManager(socketFactoryRegistry);
+        connManager.setMaxTotal(200);
+        connManager.setDefaultMaxPerRoute(20);
+    }
     /**
      * HttpClient是线程安全的
      */
-    private static final CloseableHttpClient httpClient= HttpClients.createDefault();
+    private static final CloseableHttpClient httpClient= HttpClients.custom().setConnectionManager(connManager).setConnectionManagerShared(true).build();
+
     /**
      * 微信第三方登录，传递一个code，获取session_key(token)
-     * @param code 微信服务器传来的code值
      * @return
      */
     @RequestMapping(value = "/client/wxlogin")
     @ResponseBody
-    public Result<Object> getWeChatUserSession(@RequestBody String code, HttpSession session){
+    public CommonReturnType getWeChatUserSession(@RequestBody LoginCodeVO loginCodeVO, HttpSession session) throws BusinessException, IOException {
+        String code=loginCodeVO.getCode();
         //请求登录url
         String url="https://api.weixin.qq.com/sns/jscode2session?" +
                 "appid="+ AppConstant.APPID+"&"+"secret="+AppConstant.APPSECRET+"&"+
@@ -78,29 +103,46 @@ public class WeChatController {
             response = httpClient.execute(httpGet);
             //序列化返回对象
             JSONObject data=new JSONObject();
-            System.out.println(response.toString());
             //获取相应内容
             if(response.getStatusLine().getStatusCode()==200){
                 String content= EntityUtils.toString(response.getEntity(), "UTF-8");
                 JSONObject object= JSON.parseObject(content);//反序列化
-                if(((String)object.get("errcode")).equals("0")){//0即响应成功
-                    String openId=(String)object.get("oppenid");
+                if(content!=null){
+                    //判断是否存在错误信息
+                    String errMsg=(String)object.get("errmsg");
+                    if(errMsg!=null){
+                        return CommonReturnType.create(JSONUtil.oneErrorData(errMsg),
+                                (Integer) object.get("errcode"));
+                    }
+                    //无错，存储信息
+                    String openId=(String)object.get("openid");
                     String sessionKey=(String)object.get("session_key");
                     session.setAttribute("openid",openId);
                     session.setAttribute("session_key",sessionKey);
-
+                    System.out.println(object);
                     data.put("token",sessionKey);
-                    return new Result<>(Constant.OK,data);
+                    //判断用户是否首次登陆，不是则存储用户信息
+                    //TODO 此处可多线程进行异步信息处理
+                    User user=userService.getUserByOpenId(openId);
+                    if(user==null){
+                        user=new User();
+                        user.setWxOpenid(openId);
+                        //TODO 获取用户其余信息
+                        userService.insertOneUser(user);
+                    }
+                    return CommonReturnType.create(data);
                 }else {
                     data.put("token","");
-                    return new Result<>(Constant.WE_CHAT_LOGIN_STATUS_ERROR,data);//TODO 失败返回
+                    data.put("error", EmBusinessError.WE_CHAT_LOGIN_STATUS_ERROR.getErrMsg());
+                    return CommonReturnType.create(data,EmBusinessError.WE_CHAT_LOGIN_STATUS_ERROR.getErrCode());//TODO 失败返回
                 }
             }
         }catch (Exception e){
             e.printStackTrace();
+            throw new BusinessException(EmBusinessError.UNKNOWN_ERROR);
         }finally {
             try {
-                if(response!=null)response.close();
+                if(response!=null)response.close();//关闭响应集，因为连接池有限
                 httpClient.close();
             }catch (Exception e){
                 e.printStackTrace();
@@ -110,87 +152,5 @@ public class WeChatController {
         return null;
     }
 
-    /**
-     * 传递预约快件信息进行快件预约
-     * @param bookingExpressVO 预约快件表单
-     * @param session session，获取用户信息
-     * @return
-     */
-    //TODO 信息错误的异常处理
-    @RequestMapping(value = "/client/order/mailing",method = RequestMethod.POST)
-    @ResponseBody
-    public Result<Object> postOrderMailing(BookingExpressVO bookingExpressVO, HttpServletRequest request,
-                                           HttpSession session){
 
-        //校验token是否正确
-        String token=request.getHeader("token");
-        String sessionKey=(String) session.getAttribute("session_key");
-        if(token == null || !token.equals(sessionKey)){
-            return new Result<>(AppConstant.REQUEST_ILLEGAL_CODE,
-                    JSONUtil.oneMessageData(AppConstant.REQUEST_ILLEGAL_MESSAGE));
-        }
-
-
-        //进行预约，信息处理，如果发送方和接收方都不存在则插入数据
-        User sender;
-        User receiver;
-        //发送方并不存在则插入数据，只插入用户名和手机号
-        if(!userService.existsByPhoneNumber(bookingExpressVO.getSenderPhoneNumber())){
-            sender=new User();
-            sender.setName(bookingExpressVO.getSenderName());
-            sender.setPhoneNumber(Long.parseLong(bookingExpressVO.getSenderPhoneNumber()));//TODO 手机号应该传递正确的，否则进行一次异常处理
-            sender.setPassword(sender.getName());//TODO 密码不能为null，此处先设置为用户名就是密码，尝试获取用户微信密码
-            sender=userService.insertOneUser(sender);
-        }else {
-            sender=userService.getUserByPhoneNumber(Long.parseLong(bookingExpressVO.getSenderPhoneNumber()));
-        }
-        //接收方并不存在则插入数据，只插入用户名和手机号
-        if(!userService.existsByPhoneNumber(bookingExpressVO.getReceiverPhoneNumber())){
-            receiver=new User();
-            receiver.setName(bookingExpressVO.getReceiverName());
-            receiver.setPhoneNumber(Long.parseLong(bookingExpressVO.getReceiverPhoneNumber()));//TODO 手机号应该传递正确的，否则进行一次异常处理
-            receiver.setPassword(receiver.getName());
-            receiver=userService.insertOneUser(receiver);
-        }else {
-            receiver=userService.getUserByPhoneNumber(Long.parseLong(bookingExpressVO.getReceiverPhoneNumber()));
-        }
-        //sender与receiver的作用是提供id，保证用户记录存在
-        //TODO 超长的一段快件信息设置.......应该优化设计
-        Province province=geographyService.getProvinceByName(bookingExpressVO.getSenderProvince());
-        City city=geographyService.getCityByProvinceIdAndName(province.getProvinceId(),bookingExpressVO.getSenderCity());
-        Express express=new Express();
-        //发送方
-        express.setSenderId(sender.getId());
-        express.setSenderProvinceId(province.getId());
-        express.setSenderCityId(city.getId());
-        express.setSenderCountryId(geographyService.getCountryByCityIdAndName(city.getCityId(),bookingExpressVO.getSenderCountry()).getId());
-        express.setSenderAddress(bookingExpressVO.getSenderAddress());
-        express.setSenderPhoneNumber(sender.getPhoneNumber());
-        //接收方
-        express.setReceiverId(receiver.getId());
-        province=geographyService.getProvinceByName(bookingExpressVO.getReceiverProvince());
-        city=geographyService.getCityByProvinceIdAndName(province.getProvinceId(),bookingExpressVO.getReceiverCity());
-        express.setReceiverProvinceId(province.getId());
-        express.setReceiverCityId(city.getId());
-        express.setReceiverCountryId(geographyService.getCountryByCityIdAndName(city.getCityId(),bookingExpressVO.getReceiverCountry()).getId());
-        express.setReceiverAddress(bookingExpressVO.getReceiverAddress());
-        express.setReceiverPhoneNumber(receiver.getPhoneNumber());
-        //其余选项
-        express.setBeginTime(bookingExpressVO.getBeginTime());
-        express.setEndTime(bookingExpressVO.getEndTime());
-        express.setType(BookingExpressVO.TYPE_MAP.get(bookingExpressVO.getType()));
-        express.setWeight((float)bookingExpressVO.getKg());
-        express.setStatus(ExpressInfo.EXPRESS_MAILING);
-        express.setRemark(bookingExpressVO.getRemark());
-        express.setMoreInfo(bookingExpressVO.getMoreInfo());
-
-        //插入数据
-        express=expressService.insertOneExpress(express);
-        if (express==null){
-            return new Result<>(AppConstant.SERVER_INSERT_EXCEPTION_CODE,
-                    JSONUtil.oneMessageData(AppConstant.SERVER_INSERT_EXCEPTION_MESSAGE));
-        }
-
-        return new Result<>(Constant.OK,JSONUtil.oneMessageData(AppConstant.BOOKING_SUCCESS));
-    }
 }

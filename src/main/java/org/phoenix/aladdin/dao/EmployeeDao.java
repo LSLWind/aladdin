@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface EmployeeDao extends JpaRepository<Employee,Long> {
-    Employee findByPhoneNumberAndPassword(long phoneNumber, String password);
+    Employee findByPhoneNumberAndPassword(String phoneNumber, String password);
     Employee findByNameAndPassword(String name,String password);
 
     @Query("select e.name from Employee e where e.id=?1")

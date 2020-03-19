@@ -23,7 +23,7 @@ public class Employee {
     private String password;//存储的密码是MD5值
 
     @Column(nullable = false)
-    private long phoneNumber;
+    private String phoneNumber;
 
     @Column(length = 50)
     private String address;

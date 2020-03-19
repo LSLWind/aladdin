@@ -1,8 +1,7 @@
-package org.phoenix.aladdin.model.view;
+package org.phoenix.aladdin.app.client.viewobject;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.phoenix.aladdin.model.entity.User;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -45,10 +44,12 @@ public class BookingExpressVO {
     private String receiverPhoneNumber;
     private String receiverAddress;
 
-    private byte type;//类型
-    private int kg;
+    private Byte type;//类型
+    private Float kg;
     private String remark;//备注
     private String moreInfo;//补充说明
     private String beginTime;//预约时间段开始时间
     private String endTime;//预约时间段结束时间
+
+    private String id;//订单id
 }

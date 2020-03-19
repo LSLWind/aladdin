@@ -1,12 +1,11 @@
 package org.phoenix.aladdin.model.entity;
 
 import com.alibaba.fastjson.annotation.JSONField;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import javafx.beans.DefaultProperty;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.phoenix.aladdin.model.view.BookingExpressVO;
 
 import javax.persistence.*;
 import java.util.List;
@@ -17,6 +16,7 @@ import java.util.List;
 @Entity
 public class Express {
     @Id
+    @GeneratedValue(strategy= GenerationType.IDENTITY)
     private long id;
 
     /**
@@ -31,48 +31,47 @@ public class Express {
 
     private long senderId;
 
-    private int senderProvinceId;
+    private String senderProvince;
 
-    private int senderCityId;
+    private String senderCity;
 
-    private int senderCountryId;
+    private String senderCountry;
 
     private String senderAddress;
 
-    private long senderPhoneNumber;
+    private String senderPhoneNumber;
 
     private String senderTransportNode;
 
-    private long receiverId;
+    private Long receiverId;
 
-    private int receiverProvinceId;
+    private String receiverProvince;
 
-    private int receiverCityId;
+    private String receiverCity;
 
-    private int receiverCountryId;
+    private String receiverCountry;
 
     private String receiverAddress;
 
-    private long receiverPhoneNumber;
+    private String receiverPhoneNumber;
 
     private String receiverTransportNode;
 
-    private String beginTime;
+    private String beginTime="";
 
-    private String endTime;
+    private String endTime="";
 
-    private String barCode;
+    private String barCode="";
 
-    private String type;
+    private String type="";
 
-    private Float weight;
+    private Float weight=(float)-1;
 
-    private Float cost;
+    private Float cost=(float)-1;
 
     private String status;
 
-    private String remark;
+    private String remark="";
 
-    private String moreInfo;
-
+    private String moreInfo="";
 }
